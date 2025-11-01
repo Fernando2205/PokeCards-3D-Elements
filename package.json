@@ -10,11 +10,15 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@react-three/drei": "^10.7.6",
+    "@react-three/fiber": "^9.4.0",
     "@tailwindcss/vite": "^4.1.16",
+    "axios": "^1.13.1",
     "neostandard": "^0.12.2",
     "react": "^19.1.1",
     "react-dom": "^19.1.1",
-    "tailwindcss": "^4.1.16"
+    "tailwindcss": "^4.1.16",
+    "three": "^0.181.0"
   },
   "devDependencies": {
     "@eslint/js": "^9.36.0",
