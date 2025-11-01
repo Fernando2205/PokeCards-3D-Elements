@@ -1,5 +1,5 @@
 /**
- * Capitaliza la primera letra de un string
+ * Convertir a mayúscula la primera letra de un string
  * @param {string} str - String a capitalizar
  * @returns {string} String capitalizado
  */
@@ -11,11 +11,11 @@ export const capitalize = (str) => {
 /**
  * Formatea el número de Pokédex con ceros a la izquierda
  * @param {number} id - ID del Pokémon
- * @returns {string} ID formateado (ej: #001)
+ * @returns {string} ID formateado (ej: #0001)
  */
 
 export const formatPokedexNumber = (id) => {
-  return `#${String(id).padStart(3, '0')}`
+  return `#${String(id).padStart(4, '0')}`
 }
 
 /**
@@ -44,6 +44,6 @@ export const formatWeight = (hectograms) => {
  * @returns {Array<string>} Array de nombres de tipos
  */
 export const getTypeNames = (types) => {
-  if (!types || types.lenght === 0) return []
+  if (!types || types.length === 0) return []
   return types.map(t => t.type.name)
 }
