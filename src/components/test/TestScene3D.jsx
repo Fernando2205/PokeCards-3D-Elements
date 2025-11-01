@@ -1,6 +1,6 @@
 import { usePokemonData } from '../../hooks/usePokemonData'
 import Scene from '../scene3d/Scene'
-import ControlsOverlay from '../scene3d/ControlsOverlay'
+import ControlsOverlay from '../ui/ControlsOverlay'
 import { LoadingScreen, ErrorScreen } from '../ui'
 
 /**
