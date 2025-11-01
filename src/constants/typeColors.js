@@ -20,6 +20,66 @@ export const TYPE_COLORS = {
 }
 
 /**
+ * Configuración de propiedades materiales por tipo
+ */
+export const TYPE_MATERIAL_PROPS = {
+  fire: {
+    emissive: true,
+    emissiveIntensity: 0.3,
+    metalness: 0,
+    roughness: 0.5
+  },
+  water: {
+    metalness: 0.3,
+    roughness: 0.2
+  },
+  ice: {
+    transmission: 0.5,
+    opacity: 0.8,
+    transparent: true,
+    roughness: 0.1,
+    metalness: 0.1
+  },
+  electric: {
+    emissive: true,
+    emissiveIntensity: 0.5,
+    metalness: 0.2,
+    roughness: 0.3
+  },
+  psychic: {
+    emissive: true,
+    emissiveIntensity: 0.2,
+    metalness: 0.3,
+    roughness: 0.4
+  },
+  ghost: {
+    transparent: true,
+    opacity: 0.6,
+    transmission: 0.3,
+    roughness: 0.2
+  },
+  steel: {
+    metalness: 0.9,
+    roughness: 0.1
+  },
+  dragon: {
+    metalness: 0.5,
+    roughness: 0.3
+  },
+  rock: {
+    roughness: 0.9,
+    metalness: 0.1
+  },
+  ground: {
+    roughness: 0.8,
+    metalness: 0
+  },
+  fairy: {
+    metalness: 0.2,
+    roughness: 0.3
+  }
+}
+/**
  * Obtiene el color principal de un Pokémon basado en su tipo primario
  * @param {Array} types - Array de tipos del Pokémon
  * @returns {string} Color hexadecimal
@@ -37,4 +97,13 @@ export const getPokemonMainColor = (types) => {
 export const getPokemonColors = (types) => {
   if (!types || types.length === 0) return [TYPE_COLORS.normal]
   return types.map(t => TYPE_COLORS[t.type.name] || TYPE_COLORS.normal)
+}
+
+/**
+ * Obtiene las propiedades del material para un tipo específico
+ * @param {string} type - Tipo de Pokémon
+ * @returns {Object} Propiedades del material
+ */
+export const getTypeMaterialProps = (type) => {
+  return TYPE_MATERIAL_PROPS[type] || {}
 }
