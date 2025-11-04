@@ -13,7 +13,6 @@ import {
   formatHeight,
   formatWeight
 } from '../../utils/helpers'
-import { showToast } from '../../utils/toastService'
 import TypeEmblem3D from './TypeEmblem3D'
 import CardText3D from './CardText3D'
 
@@ -48,8 +47,8 @@ const PokemonCard3D = ({
   // Cargar textura manualmente con manejo de errores y fallback
   useEffect(() => {
     const loader = new TextureLoader()
-    let isMounted = true
     let loadedTexture = null
+    let isMounted = true
 
     // Resetear estado - marcar como cargando
     setIsLoading(true)
@@ -87,51 +86,53 @@ const PokemonCard3D = ({
     const homeUrl = pokemon.sprites?.other?.home?.front_default
     const frontDefault = pokemon.sprites?.front_default
 
-    // Intento 1: HOME sprite
-    tryLoadTexture(
-      homeUrl,
-      // Éxito con HOME
-      (tex) => {
-        setTexture(tex)
-        setHasError(false)
-        setIsLoading(false)
-        onLoadComplete?.()
-      },
-      // Fallo con HOME - intentar front_default
-      () => {
-        if (frontDefault) {
-          tryLoadTexture(
-            frontDefault,
-            // Éxito con front_default
-            (tex) => {
-              setTexture(tex)
-              setHasError(false)
-              setIsLoading(false)
-              onLoadComplete?.()
-            },
-            // Fallo con front_default - mostrar error
-            () => {
-              setHasError(true)
-              setIsLoading(false)
+    // Validar que al menos una URL existe
+    if (!homeUrl && !frontDefault) {
+      setHasError(true)
+      setIsLoading(false)
+      onLoadComplete?.()
+      return
+    }
 
-              showToast(
-                `No se pudo cargar ningún sprite de ${capitalize(pokemon.name)}`,
-                'error'
-              )
-            }
-          )
-        } else {
-          // No hay front_default, error directo
-          setHasError(true)
+    // Intento 1: HOME sprite (solo si existe)
+    if (homeUrl) {
+      tryLoadTexture(
+        homeUrl,
+        // Éxito con HOME
+        (tex) => {
+          setTexture(tex)
+          setHasError(false)
           setIsLoading(false)
           onLoadComplete?.()
-          showToast(
-            `No se pudo cargar el sprite de ${capitalize(pokemon.name)}`,
-            'error'
-          )
+        },
+        // Fallo con HOME - intentar front_default
+        () => {
+          if (frontDefault) {
+            tryLoadTexture(
+              frontDefault,
+              // Éxito con front_default
+              (tex) => {
+                setTexture(tex)
+                setHasError(false)
+                setIsLoading(false)
+                onLoadComplete?.()
+              },
+              // Fallo con front_default
+              () => {
+                setHasError(true)
+                setIsLoading(false)
+                onLoadComplete?.()
+              }
+            )
+          } else {
+            // No hay front_default, error directo
+            setHasError(true)
+            setIsLoading(false)
+            onLoadComplete?.()
+          }
         }
-      }
-    )
+      )
+    }
 
     return () => {
       isMounted = false

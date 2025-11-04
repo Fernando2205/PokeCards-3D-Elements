@@ -1,7 +1,6 @@
 import { usePokemonData } from '../hooks/usePokemonData'
 import Scene from './scene3d/Scene'
 import ControlsOverlay from './ui/ControlsOverlay'
-import Toast from './ui/Toast'
 import { Pokedex } from './sidebar'
 
 /**
@@ -26,9 +25,6 @@ const PokedexApp = () => {
 
   return (
     <div className='relative w-full h-screen flex bg-gray-950 overflow-hidden'>
-      {/* Sistema de notificaciones Toast */}
-      <Toast />
-
       {/* Pokédex Sidebar */}
       <Pokedex
         pokemonList={pokemonList}

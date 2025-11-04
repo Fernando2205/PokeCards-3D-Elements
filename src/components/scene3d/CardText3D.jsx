@@ -17,7 +17,7 @@ const CardText3D = ({
   height = 0.03
 }) => {
   return (
-    <Center position={position}>
+    <Center position={position} disableX={false} disableY={false} disableZ={false}>
       <Text3D
         font='/fonts/helvetiker_regular.typeface.json'
         size={size}
