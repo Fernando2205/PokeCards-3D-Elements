@@ -1,22 +1,41 @@
+import { useState, useEffect } from 'react'
 import { Canvas } from '@react-three/fiber'
 import { PerspectiveCamera } from '@react-three/drei'
 import { SCENE_CONFIG } from '../../constants/config'
 import SceneLights from './SceneLights'
 import CameraControls from './CameraControls'
 import GroundPlane from './GroundPlane'
-import PokemonCardsGroup from './PokemonCardsGroup'
+import PokemonCard3D from './PokemonCard3D'
+import BackgroundImage3D from './BackgroundImage3D'
+import LoadingFallback from '../ui/LoadingFallback'
 
 /**
- * Escena 3D principal con las tarjetas de Pokémon
-
- * @param {Array} pokemonList - Lista de Pokémon a mostrar
+ * Escena 3D principal con la tarjeta del Pokémon seleccionado
  * @param {Object} selectedPokemon - Pokémon actualmente seleccionado
- * @param {Function} onPokemonSelect - Callback al seleccionar un Pokémon
  */
-const Scene = ({ pokemonList = [], selectedPokemon, onPokemonSelect }) => {
+const Scene = ({ selectedPokemon }) => {
+  const [isCardLoading, setIsCardLoading] = useState(false)
+
+  // Detectar cuando cambia el pokemon para mostrar loading
+  useEffect(() => {
+    if (selectedPokemon) {
+      setIsCardLoading(true)
+    }
+  }, [selectedPokemon])
+
+  const handleCardLoaded = () => {
+    setIsCardLoading(false)
+  }
+
   return (
     <div className='w-full h-full bg-linear-to-b from-gray-900 via-gray-800 to-black'>
-      <Canvas shadows dpr={[1, 2]}>
+      <Canvas
+        shadows
+        gl={{
+          antialias: true,
+          powerPreference: 'high-performance'
+        }}
+      >
         {/* Cámara principal */}
         <PerspectiveCamera
           makeDefault
@@ -27,18 +46,24 @@ const Scene = ({ pokemonList = [], selectedPokemon, onPokemonSelect }) => {
         {/* Controles de cámara */}
         <CameraControls />
 
+        {/* Fondo con imagen */}
+        <BackgroundImage3D />
+
         {/* Iluminación de la escena */}
         <SceneLights />
 
-        {/* Fog para profundidad */}
-        <fog attach='fog' args={['#1a1a2e', 10, 30]} />
-
-        {/* Tarjetas de Pokémon con suspense y loading */}
-        <PokemonCardsGroup
-          pokemonList={pokemonList}
-          selectedPokemon={selectedPokemon}
-          onPokemonSelect={onPokemonSelect}
-        />
+        {/* Tarjeta del Pokémon seleccionado con loading */}
+        {selectedPokemon && (
+          <>
+            {isCardLoading && <LoadingFallback />}
+            <PokemonCard3D
+              pokemon={selectedPokemon}
+              position={[0, 0, 0]}
+              isSelected
+              onLoadComplete={handleCardLoaded}
+            />
+          </>
+        )}
 
         {/* Plano de suelo */}
         <GroundPlane />

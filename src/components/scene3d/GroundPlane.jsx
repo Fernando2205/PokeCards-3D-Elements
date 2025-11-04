@@ -1,16 +1,18 @@
 /**
- * Plano de suelo con sombras para la escena 3D
- * Proporciona una superficie que recibe sombras de los objetos
+ * Plano de suelo con color sólido para la escena 3D
  */
 const GroundPlane = () => {
   return (
     <mesh
       rotation={[-Math.PI / 2, 0, 0]}
-      position={[0, -2, 0]}
+      position={[0, -40, 0]}
       receiveShadow
     >
-      <planeGeometry args={[50, 50]} />
-      <shadowMaterial opacity={0.3} />
+      <planeGeometry args={[100, 100]} />
+      <meshBasicMaterial
+        color='#5C7E50'
+        fog={false}
+      />
     </mesh>
   )
 }
