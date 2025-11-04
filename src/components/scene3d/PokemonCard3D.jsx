@@ -1,11 +1,11 @@
-import { useRef, useState, useCallback, useMemo } from 'react'
-import { useFrame, useLoader } from '@react-three/fiber'
+import { useRef, useState, useCallback, useMemo, useEffect } from 'react'
+import { useFrame } from '@react-three/fiber'
 import { RoundedBox, Text } from '@react-three/drei'
 import { TextureLoader } from 'three'
 import * as THREE from 'three'
-import { SPRITE_SOURCES } from '../../constants/config'
+import { CARD_ANIMATION_CONFIG } from '../../constants/config'
 import { getPokemonMainColor, TYPE_COLORS } from '../../constants/typeColors'
-import { MAX_STATS, STAT_INDICES, STAT_NAMES } from '../../constants/pokemonStats'
+import { MAX_STATS, STAT_INDICES, STAT_NAMES, STAT_COLORS } from '../../constants/pokemonStats'
 import {
   getTypeNames,
   formatPokedexNumber,
@@ -13,41 +13,154 @@ import {
   formatHeight,
   formatWeight
 } from '../../utils/helpers'
+import { showToast } from '../../utils/toastService'
 import TypeEmblem3D from './TypeEmblem3D'
 import CardText3D from './CardText3D'
 
 /**
  * Componente de tarjeta 3D profesional para un Pokémon
+ * Renderiza una tarjeta interactiva en 3D con información del Pokémon incluyendo:
+ * - Sprite animado
+ * - Información básica (nombre, número, tipos)
+ * - Estadísticas visuales
+ * - Datos físicos (altura, peso)
+ * - Efectos visuales y animaciones
+ *
+ * @param {Object} props.pokemon - Objeto completo del Pokémon de la API
+ * @param {Array<number>} props.position - Posición [x, y, z] en el espacio 3D
+ * @param {Function} props.onClick - Callback cuando se hace click en la tarjeta
+ * @param {boolean} props.isSelected - Si la tarjeta está seleccionada
+ * @returns {JSX.Element} Grupo 3D con la tarjeta del Pokémon
  */
 const PokemonCard3D = ({
   pokemon,
   position = [0, 0, 0],
   onClick,
-  isSelected = false
+  isSelected = false,
+  onLoadComplete
 }) => {
   const groupRef = useRef()
   const [hovered, setHovered] = useState(false)
+  const [texture, setTexture] = useState(null)
+  const [hasError, setHasError] = useState(false)
+  const [isLoading, setIsLoading] = useState(true)
 
-  // Handler para errores de carga de textura
-  const handleTextureError = useCallback((error) => {
-    console.error(`Error loading texture for ${pokemon.name}:`, error)
-  }, [pokemon.name])
+  // Cargar textura manualmente con manejo de errores y fallback
+  useEffect(() => {
+    const loader = new TextureLoader()
+    let isMounted = true
+    let loadedTexture = null
 
-  // Cargar textura del Pokémon
-  const texture = useLoader(
-    TextureLoader,
-    SPRITE_SOURCES.HOME(pokemon.id),
-    undefined,
-    handleTextureError
-  )
+    // Resetear estado - marcar como cargando
+    setIsLoading(true)
+    setHasError(false)
+    setTexture(null)
 
-  // Configurar textura
-  useMemo(() => {
-    if (texture) {
-      texture.minFilter = THREE.LinearFilter
-      texture.magFilter = THREE.LinearFilter
+    // Función para intentar cargar una URL
+    const tryLoadTexture = (url, onSuccess, onFail) => {
+      loader.load(
+        url,
+        // onLoad
+        (tex) => {
+          if (isMounted) {
+            tex.minFilter = THREE.LinearFilter
+            tex.magFilter = THREE.LinearFilter
+            tex.generateMipmaps = false
+            tex.anisotropy = 1
+            loadedTexture = tex
+            onSuccess(tex)
+          }
+        },
+        // onProgress
+        undefined,
+        // onError
+        (error) => {
+          if (isMounted) {
+            console.error(`Error cargando sprite desde ${url}:`, error)
+            onFail()
+          }
+        }
+      )
     }
-  }, [texture])
+
+    // Flujo de carga con fallback
+    const homeUrl = pokemon.sprites?.other?.home?.front_default
+    const frontDefault = pokemon.sprites?.front_default
+
+    // Intento 1: HOME sprite
+    tryLoadTexture(
+      homeUrl,
+      // Éxito con HOME
+      (tex) => {
+        setTexture(tex)
+        setHasError(false)
+        setIsLoading(false)
+        onLoadComplete?.()
+      },
+      // Fallo con HOME - intentar front_default
+      () => {
+        if (frontDefault) {
+          tryLoadTexture(
+            frontDefault,
+            // Éxito con front_default
+            (tex) => {
+              setTexture(tex)
+              setHasError(false)
+              setIsLoading(false)
+              onLoadComplete?.()
+            },
+            // Fallo con front_default - mostrar error
+            () => {
+              setHasError(true)
+              setIsLoading(false)
+
+              showToast(
+                `No se pudo cargar ningún sprite de ${capitalize(pokemon.name)}`,
+                'error'
+              )
+            }
+          )
+        } else {
+          // No hay front_default, error directo
+          setHasError(true)
+          setIsLoading(false)
+          onLoadComplete?.()
+          showToast(
+            `No se pudo cargar el sprite de ${capitalize(pokemon.name)}`,
+            'error'
+          )
+        }
+      }
+    )
+
+    return () => {
+      isMounted = false
+      if (loadedTexture) {
+        loadedTexture.dispose()
+      }
+    }
+  }, [pokemon.name, pokemon.sprites?.other?.home?.front_default, pokemon.sprites?.front_default, onLoadComplete])
+
+  // Cleanup completo del grupo cuando se desmonta
+  useEffect(() => {
+    const group = groupRef.current
+    return () => {
+      if (group) {
+        group.traverse((object) => {
+          if (object.geometry) {
+            object.geometry.dispose()
+          }
+          if (object.material) {
+            if (Array.isArray(object.material)) {
+              object.material.forEach(material => material.dispose())
+            } else {
+              object.material.dispose()
+            }
+          }
+        })
+      }
+    }
+  }, [])
 
   // Datos memoizados
   const mainColor = useMemo(
@@ -65,39 +178,39 @@ const PokemonCard3D = ({
     [pokemon.id]
   )
 
-  // Usar helpers para altura y peso
   const physicalInfo = useMemo(() => ({
     height: formatHeight(pokemon.height),
     weight: formatWeight(pokemon.weight)
   }), [pokemon.height, pokemon.weight])
 
-  // Obtener todas las stats con formato profesional
-  const stats = useMemo(() => [
-    {
-      name: STAT_NAMES.hp,
-      value: pokemon.stats[STAT_INDICES.hp].base_stat,
-      color: '#FF5959',
-      max: MAX_STATS.hp
-    },
-    {
-      name: STAT_NAMES.attack,
-      value: pokemon.stats[STAT_INDICES.attack].base_stat,
-      color: '#F5AC78',
-      max: MAX_STATS.attack
-    },
-    {
-      name: STAT_NAMES.defense,
-      value: pokemon.stats[STAT_INDICES.defense].base_stat,
-      color: '#FAE078',
-      max: MAX_STATS.defense
-    },
-    {
-      name: STAT_NAMES.speed,
-      value: pokemon.stats[STAT_INDICES.speed].base_stat,
-      color: '#FA92B2',
-      max: MAX_STATS.speed
-    }
-  ], [pokemon.stats])
+  const stats = useMemo(() => {
+    return [
+      {
+        name: STAT_NAMES.hp,
+        value: pokemon.stats[STAT_INDICES.hp].base_stat,
+        color: STAT_COLORS.hp,
+        max: MAX_STATS.hp
+      },
+      {
+        name: STAT_NAMES.attack,
+        value: pokemon.stats[STAT_INDICES.attack].base_stat,
+        color: STAT_COLORS.attack,
+        max: MAX_STATS.attack
+      },
+      {
+        name: STAT_NAMES.defense,
+        value: pokemon.stats[STAT_INDICES.defense].base_stat,
+        color: STAT_COLORS.defense,
+        max: MAX_STATS.defense
+      },
+      {
+        name: STAT_NAMES.speed,
+        value: pokemon.stats[STAT_INDICES.speed].base_stat,
+        color: STAT_COLORS.speed,
+        max: MAX_STATS.speed
+      }
+    ]
+  }, [pokemon.stats])
 
   // Handlers de eventos
   const handlePointerOver = useCallback((e) => {
@@ -119,17 +232,24 @@ const PokemonCard3D = ({
   useFrame((state, delta) => {
     if (!groupRef.current) return
 
-    groupRef.current.rotation.y += delta * 0.3
+    groupRef.current.rotation.y += delta * CARD_ANIMATION_CONFIG.ROTATION_SPEED
 
-    const targetScale = hovered || isSelected ? 1.2 : 1
+    const targetScale = hovered || isSelected ? CARD_ANIMATION_CONFIG.HOVER_SCALE : 1
     groupRef.current.scale.lerp(
       { x: targetScale, y: targetScale, z: targetScale },
-      0.1
+      CARD_ANIMATION_CONFIG.SCALE_SMOOTH
     )
 
-    const targetY = position[1] + (hovered ? 0.3 : 0) + (isSelected ? 0.5 : 0)
-    groupRef.current.position.y += (targetY - groupRef.current.position.y) * 0.1
+    const hoverOffset = hovered ? CARD_ANIMATION_CONFIG.HOVER_LIFT : 0
+    const selectedOffset = isSelected ? CARD_ANIMATION_CONFIG.SELECTED_LIFT : 0
+    const targetY = position[1] + hoverOffset + selectedOffset
+    groupRef.current.position.y += (targetY - groupRef.current.position.y) * CARD_ANIMATION_CONFIG.POSITION_SMOOTH
   })
+
+  // No renderizar hasta que termine de cargar
+  if (isLoading) {
+    return null
+  }
 
   return (
     <group
@@ -182,7 +302,7 @@ const PokemonCard3D = ({
       />
 
       {/* Imagen del Pokémon */}
-      {texture && (
+      {texture && !hasError && (
         <mesh position={[0, 0.35, 0.12]}>
           <planeGeometry args={[1.9, 1.9]} />
           <meshBasicMaterial
@@ -191,6 +311,17 @@ const PokemonCard3D = ({
             side={THREE.DoubleSide}
           />
         </mesh>
+      )}
+
+      {/* Placeholder cuando falla la carga */}
+      {hasError && (
+        <CardText3D
+          text='?'
+          position={[0, 0.35, 0.12]}
+          color='#ff6b6b'
+          size={1.2}
+          height={0.05}
+        />
       )}
 
       {/* Badges de tipos */}
@@ -335,10 +466,10 @@ const PokemonCard3D = ({
         })}
       </group>
 
-      {/* Emblema 3D del tipo PRINCIPAL */}
+      {/* Emblema 3D del tipo principal */}
       <TypeEmblem3D
         type={typeNames[0]}
-        position={[-1, 1.4, 0.3]}
+        position={[-1, 1.4, 0.5]}
         rotationSpeed={1.5}
       />
 
