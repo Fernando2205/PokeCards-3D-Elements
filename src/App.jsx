@@ -1,7 +1,7 @@
-import TestPokemones from './components/TestPokemones'
+import PokedexApp from './components/PokedexApp'
 
 function App () {
-  return <TestPokemones />
+  return <PokedexApp />
 }
 
 export default App
