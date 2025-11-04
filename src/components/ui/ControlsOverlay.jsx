@@ -5,7 +5,7 @@ import { useState } from 'react'
  * Puede ser minimizado/expandido para no obstruir la vista
  */
 const ControlsOverlay = () => {
-  const [isExpanded, setIsExpanded] = useState(true)
+  const [isExpanded, setIsExpanded] = useState(false)
 
   return (
     <div className='absolute top-4 right-4'>
@@ -25,8 +25,7 @@ const ControlsOverlay = () => {
             <ul className='text-sm space-y-1'>
               <li>Click izquierdo + arrastrar: Rotar cámara</li>
               <li>Rueda del ratón: Zoom</li>
-              <li>Click derecho + arrastrar: Pan</li>
-              <li>Click en tarjeta: Seleccionar</li>
+              <li>Click derecho + arrastrar: Desplazar cámara</li>
               <li>Hover en tarjeta: Resaltar</li>
             </ul>
           </div>
