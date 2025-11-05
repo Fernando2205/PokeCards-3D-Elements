@@ -23,7 +23,7 @@ La aplicación permite navegar por la lista de Pokémon, seleccionar cualquiera 
 
 ### PokeAPI
 
-Utilizamos la [PokeAPI](https://pokeapi.co/) para obtener toda la información de los Pokémon:
+Se utilizó la [PokeAPI](https://pokeapi.co/) para obtener toda la información de los Pokémon:
 
 **Endpoint principal:**
 
